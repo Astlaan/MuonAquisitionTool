@@ -37,9 +37,9 @@ class Ui_Dialog(object):
         self.label_2.setWordWrap(True)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.verticalLayout.addWidget(self.label_2)
-        self.pushButton = QtGui.QPushButton(Dialog)
-        self.pushButton.setObjectName(_fromUtf8("pushButton"))
-        self.verticalLayout.addWidget(self.pushButton)
+        self.btn_about_close = QtGui.QPushButton(Dialog)
+        self.btn_about_close.setObjectName(_fromUtf8("btn_about_close"))
+        self.verticalLayout.addWidget(self.btn_about_close)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -48,5 +48,5 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))
         self.label.setText(_translate("Dialog", "This is a GUI made with PyQt, with the purpose of interacting with the Portable Muon Telescope Project in development by LabRC in conjunction with LIP .", None))
         self.label_2.setText(_translate("Dialog", "This is part of an internship task, organized by Prof. Fernando Barão.", None))
-        self.pushButton.setText(_translate("Dialog", "OK", None))
+        self.btn_about_close.setText(_translate("Dialog", "OK", None))
 
