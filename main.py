@@ -33,10 +33,10 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         """Booting up the Graphics"""
+        self.preview_plot = pg.PlotWidget(self.groupBox_2)
         self.preview_plot.adjustSize()
-        self.preview_plot = pg.PlotWidget(self.widget_2)
         self.data1 = numpy.random.normal(size=300)
-        self.curve1 = self.preview_plot.plot(data1)
+        self.curve1 = self.preview_plot.plot(self.data1)
 
         #self.preview_widget= QtGui.QWidget(self.groupBox_2)
 
