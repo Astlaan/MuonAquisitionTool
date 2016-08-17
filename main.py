@@ -1,10 +1,12 @@
-#! usr/bin/env python3
-
+#! /usr/bin/env python3
 import sys
+import ui_aboutdialog
+import multiprocessing
 from PyQt4.QtGui import QMainWindow, QApplication, QDialog
 from PyQt4 import QtCore, QtGui
 from ui_mainwindow import Ui_MainWindow
-import ui_aboutdialog
+from operations import Librarian
+from listener import Listener
 
 #import graphx
 import numpy 
@@ -32,43 +34,115 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
 
         self.setupUi(self)
 
-        """Booting up the Graphics"""
-        self.preview_plot = pg.PlotWidget(self.groupBox_2)
-        self.preview_plot.adjustSize()
-        self.data1 = numpy.random.normal(size=300)
-        self.curve1 = self.preview_plot.plot(self.data1)
+        """Initial settings"""
+        self.display_radio1.setChecked(True)
+        self.aquire_status=False
+        self.update_status=True #(Graph update)
 
-        #self.preview_widget= QtGui.QWidget(self.groupBox_2)
+        self.parent, self.child = multiprocessing.Pipe()
+        self.listener1=Listener(self.child)
+        self.listening_proc=multiprocessing.Process(target=listener1)
+        self.listening_proc.start()
+
+        """Booting up the Graphics"""
+        #self.preview_plot = pg.PlotWidget(self.groupBox_2)
+        #self.preview_plot.resize(500, 500)
+        #self.data1 = numpy.random.normal(size=100)
+        #self.curve1 = self.preview_plot.plot(self.data1)
+        #self.graphdata=[]
+        #preview_timer=QTimer()
+        # preview_timer.timeout.connect(graphx.update)
+        #self.preview_plot = pg.PlotWidget(self.groupBox_2)
+
+        librarian1=Librarian()
+
+
 
 
         """Connect up the buttons."""
         self.actionAbout.triggered.connect(self.showAboutDialog)
+
         self.operation_start_button.clicked.connect(self.operation_start) 
+        self.operation_stop_button.clicked.connect(self.operation_stop)
 
+        self.display_radio1.clicked.connect(self.on_display_radio)
+        self.display_radio2.clicked.connect(self.on_display_radio)
+        self.display_radio3.clicked.connect(self.on_display_radio)
+        self.display_radio4.clicked.connect(self.on_display_radio)
 
-        
-        #operation_stop_button.clicked.connect(self.operation_stop)
-        #btn_TDC.clicked.connect(showdialog_TDC)
+        self.preview_state_button.clicked.connect(self.on_preview_state_button)
 
-
+        self.hv_slider.valueChanged.connect(self.on_hv_slider)
+        self.hv_spinbox.valueChanged.connect(self.on_hv_spinbox)
+        self.hv_set_button.clicked.connect(self.on_hv_set_button)
 
     def operation_start(self):
-       	print("Operation started")
-        self.operation_status_label.setText("<html><head/><body><p><span style=\" font-weight:600; color:#ff0000;\">Stopped.</span></p></body></html>")
-
-
-    def operation_stop():
-       	print("Operation stopped")
+        print("Operation started")
         self.operation_status_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600; color:#00ff00;\">Running...</span></p></body></html>", None))
+        self.operation_start_button.setEnabled(False)
+        self.operation_stop_button.setEnabled(True)
+        self.listener1.start()
+        #if self.update_status==True:
+            #get data function
 
+
+
+    def operation_stop(self):
+        print("Operation stopped")
+        self.operation_status_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600; color:#ff0000;\">Stopped.</span></p></body></html>", None))
+        self.operation_start_button.setEnabled(True)
+        self.operation_stop_button.setEnabled(False)
+        self.listener1.stop()
+
+    def on_display_radio(self):
+        print("on_display_radio")
+        #if b.isChecked==True:
+        b=self.sender().objectName()
+        if b=="display_radio1":  #1 minute
+            print("1")
+        elif b=="display_radio2": #1 hour
+            print("2")
+        elif b=="display_radio3":  #1 day
+            print("3")
+        else:
+            print("4") 
+        
     def showAboutDialog(self):
         print("About Dialog opened")
         self.d=QDialog()
-        about_ui=ui_aboutdialog.Ui_Dialog()
-        about_ui.setupUi(self.d)
+        self.about_ui=ui_aboutdialog.Ui_Dialog()
+        self.about_ui.setupUi(self.d)
 
-        self.d.btn_about_close(self.d.close)
+        self.d.btn_about_close.clicked.connect(self.d.close)
         self.d.show()
+
+    def on_hv_slider(self, value):
+        self.hv_spinbox.setValue(value)
+
+    def on_hv_spinbox(self, value):
+        self.hv_slider.setValue(value)
+
+    def on_hv_set_button(self):  #Falta............
+        True
+
+    def on_preview_state_button(self):
+        print("Preview state button pushed")
+
+        if self.preview_state_button.text()=="Resume":
+            self.preview_state_button.setText("Pause")
+            self.update_status=False
+            #stop timer
+
+        else: #pause
+            self.preview_state_button.setText("Resume")
+            self.update_status=True
+            #get_last_events
+            #resume timer
+
+
+
+
+
 
 
 
@@ -84,19 +158,28 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
 
 app=QApplication(sys.argv)
 window = MainWindow2()
-#ui = MainWindow()
-#ui.setupUi(window)
-
-
-
 window.show()
 
-"""from PyQt4.QtGui import QDialog
-windows2=QDialog()
-ui2=ui_aboutdialog.Ui_Dialog()
-ui2.setupUi(windows2)
+"""Starting the Listener""" #I tried to put this multiprocessing part inside the class, but it didn't work, somehow...
+#parent, child = multiprocessing.Pipe()
+#listener1=Listener(child)
+#listening_proc=multiprocessing.Process(target=listener1)
+#listening_proc.start()
 
-windows2.show()"""
+close_signal=app.exec_()
+parent.send("exit") #command that tells the listener to close.
+listening_proc.join()
+sys.exit(close_signal)
 
 
-sys.exit(app.exec_())
+"""Notes
+
+It is probably possible to pack all graphics related stuff into a class with methods (for organization) with multiple inheritance,
+though I am not skilled with this aspect of python. So I went with a simpler approach to have an earlier release date.
+
+THIS PROGRAM USES EPOCH (UNIX) TIME.
+
+Database has timestamp default as current_timestamp(), be careful, always send the timestamp yourself to MySQL.
+
+ """
+
