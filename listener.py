@@ -66,20 +66,13 @@ class Listener:
 				self.stop()
 			else:
 				print("Error")
-				self.__del__()
+				break
+		self.__del__()
 	 
 
 if __name__=='__main__':
 	listener1=Listener()
-	while True:
-		if input()=="exit":
-			break
-		elif input()=="start":
-			listener1.start()
-		elif input()=="stop":
-			listener1.stop()
-		else:
-			print("Error")
+
 	
 """The start method will have to receive the other fields to be saved into the database.
 Changing the SQL query will also be required"""
