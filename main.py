@@ -1,12 +1,11 @@
 #! /usr/bin/env python3
 import sys
 import ui_aboutdialog
-import multiprocessing
+import subprocess
 from PyQt4.QtGui import QMainWindow, QApplication, QDialog
 from PyQt4 import QtCore, QtGui
 from ui_mainwindow import Ui_MainWindow
 from operations import Librarian
-from listener import Listener
 
 #import graphx
 import numpy 
@@ -39,10 +38,17 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
         self.aquire_status=False
         self.update_status=True #(Graph update)
 
-        self.parent, self.child = multiprocessing.Pipe()
-        self.listener1=Listener(self.child)
-        self.listening_proc=multiprocessing.Process(target=listener1)
-        self.listening_proc.start()
+        # try:
+        self.listener = subprocess.Popen(["python3","listener.py"], bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            #bufsize=1 -> Line buffered. 0 for no buffering
+            # print("Listening process activated.")
+        # except:
+            # print("Failed to activated Listening process.")
+
+        # self.parent, self.child = multiprocessing.Pipe()
+        # self.listener1=Listener(self.child)
+        # self.listening_proc=multiprocessing.Process(target=listener1)
+        # self.listening_proc.start() #Starts the multiprocessing process
 
         """Booting up the Graphics"""
         #self.preview_plot = pg.PlotWidget(self.groupBox_2)
@@ -54,7 +60,7 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
         # preview_timer.timeout.connect(graphx.update)
         #self.preview_plot = pg.PlotWidget(self.groupBox_2)
 
-        librarian1=Librarian()
+        self.librarian=Librarian()
 
 
 
@@ -81,7 +87,8 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
         self.operation_status_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600; color:#00ff00;\">Running...</span></p></body></html>", None))
         self.operation_start_button.setEnabled(False)
         self.operation_stop_button.setEnabled(True)
-        self.listener1.start()
+        self.listener.stdin.write(bytes("start", "ascii"))
+        self.listener.stdin.flush()
         #if self.update_status==True:
             #get data function
 
@@ -92,7 +99,8 @@ class MainWindow2(QMainWindow, Ui_MainWindow):
         self.operation_status_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600; color:#ff0000;\">Stopped.</span></p></body></html>", None))
         self.operation_start_button.setEnabled(True)
         self.operation_stop_button.setEnabled(False)
-        self.listener1.stop()
+        self.listener.stdin(bytes("stop"), "ascii")
+        self.listener.stdin.flush()
 
     def on_display_radio(self):
         print("on_display_radio")
@@ -161,14 +169,14 @@ window = MainWindow2()
 window.show()
 
 """Starting the Listener""" #I tried to put this multiprocessing part inside the class, but it didn't work, somehow...
-#parent, child = multiprocessing.Pipe()
-#listener1=Listener(child)
-#listening_proc=multiprocessing.Process(target=listener1)
-#listening_proc.start()
+# parent, child = multiprocessing.Pipe()
+# listener1=Listener(child)
+# listening_proc=multiprocessing.Process(target=listener1)
+# listening_proc.start()
 
 close_signal=app.exec_()
-parent.send("exit") #command that tells the listener to close.
-listening_proc.join()
+# parent.send("exit") #command that tells the listener to close.
+# listening_proc.join()
 sys.exit(close_signal)
 
 
