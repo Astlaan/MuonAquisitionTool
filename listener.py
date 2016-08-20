@@ -1,22 +1,31 @@
 import time
-import Adafruit_BBIO.GPIO as GPIO
 import pymysql
 import sys
 
+test1=False
+try:
+	import Adafruit_BBIO.GPIO as GPIO
+except ImportError:
+	test1=True
+
 class Listener:
-	def __init__(self, multiprocessing=None):
+	def __init__(self, multiprocessing=None, test=False):
 
 		#Configurations
 		self.path="data.txt"
 		self.PIN = "P9_15" """This is the last AND output"""
-		self.connection=self.connect()
-		self.cur=self.connection.cursor()
+		self.test=test
+		# if test:
+		# 	print("-- Listener test mode --")
 
 		self.run(multiprocessing)
 
+
+
 	def __del__(self):
 		self.stop()
-		self.connection.close()
+		if not self.test:
+			self.connection.close()
 		print("Shutting listener down.")
 
 		#Save to file
@@ -43,26 +52,34 @@ class Listener:
 
 
 	def start(self, elevation=None, latitude=None, longitude=None):  
-		GPIO.setup(self.PIN, GPIO.IN)
-		GPIO.add_event_detect(self.PIN,GPIO.RISING, self.log_event)
+		#if not self.test:
+		#	GPIO.setup(self.PIN, GPIO.IN)
+		#	GPIO.add_event_detect(self.PIN,GPIO.RISING, self.log_event)
 		print("Listening started")
 
 	def stop(self):
-		GPIO.remove_event_detect(self.PIN)
-		GPIO.cleanup()
+		#if not self.test:
+		#	GPIO.remove_event_detect(self.PIN)
+		#	GPIO.cleanup()
 		print("Listening stopped")
 		
 	def run(self, multiprocessing):
-		channel = input if not multiprocessing else multiprocessing.recv
 		if multiprocessing:
-			print("--Multiprocessing mode--") 
-
+			print("--Multiprocessing mode--") 	
+		
+		channel = input if not multiprocessing else multiprocessing.recv
+			
 		while True:
-			if channel()=="exit":
+			try:
+				command=channel()
+			except:
+				print("Listening - Could not get command from channel")
+				sys.exit()
+			if command=="exit":
 				break
-			elif channel()=="start":
+			elif command=="start":
 				self.start()
-			elif channel()=="stop":
+			elif command=="stop":
 				self.stop()
 			else:
 				print("Error")
@@ -71,7 +88,10 @@ class Listener:
 	 
 
 if __name__=='__main__':
-	listener1=Listener()
+	if len(sys.argv)==2:
+		test1=True
+	listener1=Listener(test=test1)
+
 
 	
 """The start method will have to receive the other fields to be saved into the database.
